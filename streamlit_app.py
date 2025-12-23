@@ -6,51 +6,52 @@ import zipfile
 import os
 
 # =============================================
-# GIẢI NÉN MÔ HÌNH TỪ FILE ZIP (nếu chưa có)
+# GIẢI NÉN MÔ HÌNH TỪ FILE ZIP (nếu chưa có) – CHO MODEL MỚI 4 LỚP
 # =============================================
-model_file = "lung_3_diseases_model.keras"
-zip_file = "lung_3_diseases_model.zip"  # Tên file zip bạn đã upload lên GitHub
+model_file = "lung_4_classes_model.keras"
+zip_file = "lung_4_classes_model.zip"  # Tên file zip mới nếu bạn upload zip (nếu không zip thì bỏ phần này)
 
 if not os.path.exists(model_file):
     if os.path.exists(zip_file):
-        st.write("🔄 Đang giải nén mô hình từ file zip... (chỉ lần đầu, mất khoảng 20-60 giây)")
+        st.write("🔄 Đang giải nén mô hình mới (4 lớp) từ file zip... (chỉ lần đầu, mất khoảng 20-60 giây)")
         with zipfile.ZipFile(zip_file, 'r') as zip_ref:
             zip_ref.extractall(".")
         st.success("✅ Giải nén mô hình thành công!")
     else:
-        st.error(f"❌ Không tìm thấy file zip mô hình: {zip_file}")
+        st.error(f"❌ Không tìm thấy file mô hình hoặc zip: {model_file} / {zip_file}")
         st.stop()  # Dừng app nếu không có model
 else:
-    st.write("✅ Mô hình đã sẵn sàng (đã được giải nén từ trước).")
+    st.write("✅ Mô hình 4 lớp đã sẵn sàng (đã được giải nén từ trước).")
 
 # =============================================
-# LOAD MÔ HÌNH (không dùng cache để tránh lỗi hash)
+# LOAD MÔ HÌNH MỚI (4 LỚP – KHÔNG DÙNG CACHE ĐỂ TRÁNH LỖI)
 # =============================================
-with st.spinner("Đang tải mô hình AI... (lần đầu có thể mất 20-40 giây)"):
+with st.spinner("Đang tải mô hình AI mới (4 lớp)... (lần đầu có thể mất 20-40 giây)"):
     model = tf.keras.models.load_model(model_file)
 
 # =============================================
-# THỨ TỰ LỚP – BẮT BUỘC ĐÚNG VỚI COLAB
+# THỨ TỰ LỚP – BẮT BUỘC ĐÚNG VỚI CLASS_INDICES IN RA Ở CELL 3
 # =============================================
-# Nếu class_indices ở Colab in ra khác thứ tự này thì bạn sửa lại cho đúng nhé!
-class_names = ['COVID-19', 'Viêm phổi (Pneumonia)', 'Lao phổi (Tuberculosis)']
+# Sửa chính xác theo output của Colab (thường alphabet: COVID19=0, NORMAL=1, PNEUMONIA=2, TURBERCULOSIS=3)
+class_names = ['COVID-19', 'Phổi bình thường (Normal)', 'Viêm phổi (Pneumonia)', 'Lao phổi (Tuberculosis)']
 
 # =============================================
-# GIAO DIỆN STREAMLIT
+# GIAO DIỆN STREAMLIT – ĐÃ CẬP NHẬT CHO 4 LỚP
 # =============================================
-st.set_page_config(page_title="Nhận diện bệnh phổi từ X-quang", layout="centered")
+st.set_page_config(page_title="Nhận diện bệnh phổi từ X-quang (4 lớp)", layout="centered")
 
-st.title("🫁 Nhận diện 3 bệnh phổi từ ảnh X-quang ngực")
+st.title("🫁 Nhận diện 4 lớp bệnh phổi từ ảnh X-quang ngực")
 st.markdown("---")
 
 st.write("""
-Ứng dụng sử dụng mô hình Deep Learning (MobileNetV2) để phân loại ảnh X-quang thành một trong 3 bệnh:
+Ứng dụng sử dụng mô hình Deep Learning (MobileNetV2) để phân loại ảnh X-quang thành một trong 4 lớp:
 - **COVID-19**
+- **Phổi bình thường (Normal)**
 - **Viêm phổi (Pneumonia)**
 - **Lao phổi (Tuberculosis)**
 """)
 
-st.error("⚠️ Đây chỉ là công cụ hỗ trợ AI – KHÔNG thay thế chẩn đoán của bác sĩ!")
+st.error("⚠️ Đây chỉ là công cụ hỗ trợ AI – KHÔNG thay thế chẩn đoán của bác sĩ! Ảnh bình thường sẽ được nhận là 'Normal'.")
 
 # Upload ảnh
 uploaded_file = st.file_uploader("Upload ảnh X-quang (JPG, PNG, JPEG)", type=["jpg", "jpeg", "png"])
@@ -72,21 +73,25 @@ if uploaded_file is not None:
 
     st.markdown("---")
 
-    # Kết quả chính
-    if confidence >= 70:
-        st.success(f"**Kết quả dự đoán: {class_names[predicted_idx]}**")
+    # Kết quả chính – Đặc biệt xử lý cho Normal
+    predicted_name = class_names[predicted_idx]
+    if predicted_name == 'Phổi bình thường (Normal)':
+        st.success(f"**Kết quả dự đoán: {predicted_name}**")
+    elif confidence >= 70:
+        st.success(f"**Kết quả dự đoán: {predicted_name}**")
     elif confidence >= 50:
-        st.warning(f"**Kết quả dự đoán: {class_names[predicted_idx]}** (độ tin cậy trung bình)")
+        st.warning(f"**Kết quả dự đoán: {predicted_name}** (độ tin cậy trung bình)")
     else:
-        st.error(f"**Kết quả không rõ ràng: {class_names[predicted_idx]}** (độ tin cậy thấp)")
+        st.error(f"**Kết quả không rõ ràng: {predicted_name}** (độ tin cậy thấp)")
 
     st.write(f"**Độ tin cậy: {confidence:.2f}%**")
 
-    # Chi tiết xác suất
+    # Chi tiết xác suất – ĐÃ FIX LỖI PROGRESS (clamp giá trị 0-1)
     st.write("### Xác suất chi tiết:")
     for i, name in enumerate(class_names):
         prob = predictions[i] * 100
-        st.progress(prob / 100)
+        progress_value = max(0.0, min(1.0, prob / 100))  # Clamp để tránh lỗi StreamlitAPIException
+        st.progress(progress_value)
         if i == predicted_idx:
             st.write(f"**{name}: {prob:.2f}%**")
         else:
