@@ -6,63 +6,52 @@ import zipfile
 import os
 
 # =============================================
-# GIẢI NÉN MÔ HÌNH TỪ FILE ZIP (nếu chưa có) – CHO MODEL MỚI 4 LỚP
+# GIẢI NÉN MÔ HÌNH (nếu dùng zip)
 # =============================================
 model_file = "lung_4_classes_model.keras"
-zip_file = "lung_4_classes_model.zip"  # Tên file zip mới nếu bạn upload zip (nếu không zip thì bỏ phần này)
+zip_file = "lung_4_classes_model.zip"
 
 if not os.path.exists(model_file):
     if os.path.exists(zip_file):
-        st.write("🔄 Đang giải nén mô hình mới (4 lớp) từ file zip... (chỉ lần đầu, mất khoảng 20-60 giây)")
+        st.write("🔄 Giải nén mô hình 4 lớp...")
         with zipfile.ZipFile(zip_file, 'r') as zip_ref:
             zip_ref.extractall(".")
-        st.success("✅ Giải nén mô hình thành công!")
+        st.success("✅ Giải nén OK!")
     else:
-        st.error(f"❌ Không tìm thấy file mô hình hoặc zip: {model_file} / {zip_file}")
-        st.stop()  # Dừng app nếu không có model
+        st.error(f"❌ Không tìm thấy file: {model_file} hoặc {zip_file}")
+        st.stop()
 else:
-    st.write("✅ Mô hình 4 lớp đã sẵn sàng (đã được giải nén từ trước).")
+    st.write("✅ Mô hình đã sẵn sàng.")
 
-# =============================================
-# LOAD MÔ HÌNH MỚI (4 LỚP – KHÔNG DÙNG CACHE ĐỂ TRÁNH LỖI)
-# =============================================
-with st.spinner("Đang tải mô hình AI mới (4 lớp)... (lần đầu có thể mất 20-40 giây)"):
+# Load model
+with st.spinner("Đang load mô hình 4 lớp..."):
     model = tf.keras.models.load_model(model_file)
 
-# =============================================
-# THỨ TỰ LỚP – BẮT BUỘC ĐÚNG VỚI CLASS_INDICES IN RA Ở CELL 3
-# =============================================
-# Sửa chính xác theo output của Colab (thường alphabet: COVID19=0, NORMAL=1, PNEUMONIA=2, TURBERCULOSIS=3)
+# Thứ tự lớp CHÍNH XÁC từ Colab của bạn
 class_names = ['COVID-19', 'Phổi bình thường (Normal)', 'Viêm phổi (Pneumonia)', 'Lao phổi (Tuberculosis)']
 
-# =============================================
-# GIAO DIỆN STREAMLIT – ĐÃ CẬP NHẬT CHO 4 LỚP
-# =============================================
-st.set_page_config(page_title="Nhận diện bệnh phổi từ X-quang (4 lớp)", layout="centered")
+st.set_page_config(page_title="AI Phân loại X-quang Phổi (4 lớp)", layout="centered")
 
-st.title("🫁 Nhận diện 4 lớp bệnh phổi từ ảnh X-quang ngực")
+st.title("🫁 AI Nhận diện 4 lớp bệnh phổi từ X-quang")
 st.markdown("---")
 
 st.write("""
-Ứng dụng sử dụng mô hình Deep Learning (MobileNetV2) để phân loại ảnh X-quang thành một trong 4 lớp:
-- **COVID-19**
-- **Phổi bình thường (Normal)**
-- **Viêm phổi (Pneumonia)**
-- **Lao phổi (Tuberculosis)**
+Phân loại:  
+- COVID-19  
+- Phổi bình thường (Normal)  
+- Viêm phổi (Pneumonia)  
+- Lao phổi (Tuberculosis)  
 """)
 
-st.error("⚠️ Đây chỉ là công cụ hỗ trợ AI – KHÔNG thay thế chẩn đoán của bác sĩ! Ảnh bình thường sẽ được nhận là 'Normal'.")
+st.error("⚠️ **Chỉ hỗ trợ tham khảo – Không thay thế bác sĩ!** Nếu ảnh bình thường, sẽ hiển thị 'Normal'.")
 
-# Upload ảnh
-uploaded_file = st.file_uploader("Upload ảnh X-quang (JPG, PNG, JPEG)", type=["jpg", "jpeg", "png"])
+uploaded_file = st.file_uploader("Upload ảnh X-quang (JPG/PNG/JPEG)", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
-    # Hiển thị ảnh
     image = Image.open(uploaded_file).convert('RGB')
-    st.image(image, caption="Ảnh đã upload", width=400)
+    st.image(image, caption="Ảnh upload", width=400)
 
-    # Dự đoán
-    with st.spinner("Đang phân tích ảnh bằng AI..."):
+    with st.spinner("Phân tích..."):
         img = image.resize((224, 224))
         img_array = np.array(img) / 255.0
         img_array = np.expand_dims(img_array, axis=0)
@@ -73,30 +62,31 @@ if uploaded_file is not None:
 
     st.markdown("---")
 
-    # Kết quả chính – Đặc biệt xử lý cho Normal
     predicted_name = class_names[predicted_idx]
+
+    # Kết quả chính – Đặc biệt cho Normal
     if predicted_name == 'Phổi bình thường (Normal)':
-        st.success(f"**Kết quả dự đoán: {predicted_name}**")
+        st.success(f"**Kết quả: {predicted_name}** (Không có dấu hiệu bệnh)")
     elif confidence >= 70:
-        st.success(f"**Kết quả dự đoán: {predicted_name}**")
+        st.success(f"**Kết quả: {predicted_name}**")
     elif confidence >= 50:
-        st.warning(f"**Kết quả dự đoán: {predicted_name}** (độ tin cậy trung bình)")
+        st.warning(f"**Kết quả: {predicted_name}** (Độ tin cậy trung bình)")
     else:
-        st.error(f"**Kết quả không rõ ràng: {predicted_name}** (độ tin cậy thấp)")
+        st.error(f"**Kết quả không rõ ràng: {predicted_name}** (Độ tin cậy thấp)")
 
     st.write(f"**Độ tin cậy: {confidence:.2f}%**")
 
-    # Chi tiết xác suất – ĐÃ FIX LỖI PROGRESS (clamp giá trị 0-1)
+    # Fix lỗi progress: Clamp giá trị + hiển thị an toàn
     st.write("### Xác suất chi tiết:")
     for i, name in enumerate(class_names):
         prob = predictions[i] * 100
-        progress_value = max(0.0, min(1.0, prob / 100))  # Clamp để tránh lỗi StreamlitAPIException
-        st.progress(progress_value)
+        progress_val = max(0.0, min(1.0, prob / 100))  # Clamp 0-1
+        st.progress(progress_val)
         if i == predicted_idx:
             st.write(f"**{name}: {prob:.2f}%**")
         else:
             st.write(f"{name}: {prob:.2f}%")
 
-    st.info("💡 Khuyến nghị: Hãy mang kết quả này đến bác sĩ chuyên khoa để được chẩn đoán chính xác!")
+    st.info("💡 **Khuyến nghị**: Kết quả chỉ mang tính tham khảo. Hãy đến bác sĩ để chẩn đoán chính xác!")
 else:
-    st.info("👆 Hãy upload một ảnh X-quang ngực để bắt đầu phân tích.")
+    st.info("👆 Upload ảnh X-quang để kiểm tra.")
