@@ -6,38 +6,34 @@ import os
 import gdown
 
 # =============================================
-# CẤU HÌNH MODEL
+# CẤU HÌNH (dùng /tmp để tránh vấn đề disk)
 # =============================================
-MODEL_FILE = "lung_4_classes_fixed.keras"
-DRIVE_URL = "https://drive.google.com/uc?export=download&id=1LpZeK3Em1hDxNd4rXzhgm9huvdGuakAr"  # Link direct chuẩn
+MODEL_PATH = "/tmp/lung_4_classes_fixed.keras"  # Lưu tạm trên server
+DRIVE_ID = "1LpZeK3Em1hDxNd4rXzhgm9huvdGuakAr"   # Chỉ ID cho ngắn
+DRIVE_URL = f"https://drive.google.com/uc?id={DRIVE_ID}"
 
 # =============================================
-# TỰ ĐỘNG TẢI MODEL (chỉ từ Google Drive)
+# TẢI & CACHE MODEL (cách tốt nhất cho Streamlit Cloud)
 # =============================================
-if not os.path.exists(MODEL_FILE):
-    st.info("🌐 Đang tải model từ Google Drive (~53MB). Lần đầu sẽ mất 3-7 phút, vui lòng chờ...")
-    with st.spinner("Đang tải file lớn (bypass xác thực Google)..."):
-        # Xóa file cũ nếu bị hỏng từ lần trước
-        if os.path.exists(MODEL_FILE):
-            os.remove(MODEL_FILE)
-        # Tải với fuzzy=True để xử lý trang confirm virus scan
-        gdown.download(DRIVE_URL, MODEL_FILE, quiet=False, fuzzy=True)
-    st.success("✅ Tải model thành công!")
+@st.cache_resource(show_spinner="Đang tải và chuẩn bị model (~53MB, lần đầu mất 3-10 phút)...")
+def download_and_load_model():
+    # Tải với fuzzy=True để bypass confirm
+    gdown.download(DRIVE_URL, MODEL_PATH, quiet=False, fuzzy=True)
+    
+    # Load model ngay sau tải
+    model = tf.keras.models.load_model(MODEL_PATH)
+    return model
 
-else:
-    st.info("✅ Model đã có sẵn trên server.")
-
-# =============================================
-# LOAD MODEL (KHÔNG DÙNG CACHE để tránh lỗi cache hỏng)
-# =============================================
-st.write("🔄 Đang load model vào bộ nhớ... (có thể mất 30-90 giây)")
-with st.spinner("Loading Keras model..."):
-    model = tf.keras.models.load_model(MODEL_FILE)
-
-st.success("✅ Model đã load thành công và sẵn sàng dự đoán!")
+# Gọi hàm (sẽ cache toàn bộ: tải chỉ 1 lần, load chỉ 1 lần)
+try:
+    model = download_and_load_model()
+    st.success("✅ Model đã sẵn sàng! Bạn có thể upload ảnh ngay.")
+except Exception as e:
+    st.error("Lỗi tải/load model. Chi tiết (cho debug): " + str(e))
+    st.stop()
 
 # =============================================
-# CẤU HÌNH GIAO DIỆN (giữ nguyên phần cũ của bạn)
+# GIAO DIỆN & DỰ ĐOÁN (giữ nguyên đẹp như cũ)
 # =============================================
 class_names = ['COVID-19', 'Phổi bình thường (Normal)', 'Viêm phổi (Pneumonia)', 'Lao phổi (Tuberculosis)']
 
@@ -53,9 +49,6 @@ st.write("""
 """)
 st.error("⚠️ **Kết quả chỉ mang tính tham khảo – Không thay thế chẩn đoán của bác sĩ!**")
 
-# =============================================
-# UPLOAD VÀ DỰ ĐOÁN (giữ nguyên code cũ của bạn)
-# =============================================
 uploaded_file = st.file_uploader("Upload ảnh X-quang (JPG/PNG/JPEG)", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
@@ -99,7 +92,3 @@ if uploaded_file is not None:
 
 else:
     st.info("👆 Vui lòng upload ảnh X-quang để bắt đầu phân tích.")
-    st.markdown("### Hướng dẫn:")
-    st.write("- Ảnh nên là X-quang ngực thẳng (PA hoặc AP)")
-    st.write("- Định dạng: JPG, PNG, JPEG")
-    st.write("- Kết quả chỉ mang tính tham khảo")
