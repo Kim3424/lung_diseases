@@ -1,19 +1,28 @@
-# 🎈 Blank app template
+# Lung 4 Classes Classification Model
 
-A simple Streamlit app template for you to modify!
+Model Keras đã train sẵn để phân loại hình ảnh phổi thành 4 lớp.
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://blank-app-template.streamlit.app/)
+## Thông tin model
+- File: `lung_4_classes_fixed.keras`
+- Kích thước: ~53 MB
+- Framework: TensorFlow / Keras
 
-### How to run it on your own machine
+## Cách sử dụng (tự động tải model từ Google Drive)
 
-1. Install the requirements
+Bạn chỉ cần chạy đoạn code sau, model sẽ tự động được tải về máy lần đầu tiên:
 
-   ```
-   $ pip install -r requirements.txt
-   ```
+```python
+import tensorflow as tf
+import gdown  # Thư viện giúp tải file từ Google Drive dễ dàng
 
-2. Run the app
+# Link direct download từ Google Drive
+url = "https://drive.google.com/uc?export=download&id=1LpZeK3Em1hDxNd4rXzhgm9huvdGuakAr"
 
-   ```
-   $ streamlit run streamlit_app.py
-   ```
+# Tải model (chỉ tải 1 lần, lần sau sẽ dùng file đã có)
+gdown.download(url, "lung_4_classes_fixed.keras", quiet=False)
+
+# Load model vào chương trình
+model = tf.keras.models.load_model("lung_4_classes_fixed.keras")
+
+# Kiểm tra model
+model.summary()
