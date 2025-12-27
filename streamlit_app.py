@@ -9,7 +9,7 @@ import gdown
 # CẤU HÌNH MODEL
 # =============================================
 MODEL_FILE = "lung_4_classes_fixed.keras"
-DRIVE_URL = "https://drive.google.com/uc?export=download&id=1LpZeK3Em1hDxNd4rXzhgm9huvdGuakAr"
+DRIVE_URL = "https://drive.google.com/file/d/1LpZeK3Em1hDxNd4rXzhgm9huvdGuakAr/view?usp=drive_link"
 
 # =============================================
 # TỰ ĐỘNG TẢI MODEL (chỉ từ Google Drive)
