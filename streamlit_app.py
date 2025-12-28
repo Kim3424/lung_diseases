@@ -8,7 +8,7 @@ import numpy as np
 @st.cache_resource
 def load_model():
     model_path = hf_hub_download(
-        repo_id="yourusername/lung-disease-4classes",  # THAY BẰNG REPO CỦA BẠN
+        repo_id="Silver3424/lung-disease-4classes",  # THAY BẰNG REPO THẬT CỦA BẠN
         filename="lung_4_classes_focal.keras"
     )
     return tf.keras.models.load_model(model_path)
@@ -37,7 +37,7 @@ if uploaded_file is not None:
     predicted_name = class_names[predicted_idx]
 
     if predicted_name == 'Phổi bình thường (Normal)':
-        st.success(f"**Kết quả: {predicted_name}** (Không dấu hiệu bệnh)")
+        st.success(f"**Kết quả: {predicted_name}**")
     else:
         st.warning(f"**Kết quả: {predicted_name}** (Độ tin cậy: {confidence:.2f}%)")
 
