@@ -43,8 +43,9 @@ if uploaded_file is not None:
 
     st.write("### Xác suất chi tiết:")
     for i, name in enumerate(class_names):
-        prob = predictions[i] * 100
-        st.progress(prob / 100)
+        prob = float(predictions[i] * 100)  # Ép float để tránh rounding error
+        progress_val = max(0.0, min(1.0, prob / 100))  # Clamp an toàn 0.0-1.0
+        st.progress(progress_val)
         st.write(f"{name}: {prob:.2f}%")
 
     st.info("💡 Kết quả chỉ tham khảo – Hãy đến bác sĩ!")
